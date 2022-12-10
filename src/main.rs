@@ -24,7 +24,7 @@ static INTERVAL_MICROS: AtomicU64 = AtomicU64::new(2000);
 static ENABLE_MOUSE: AtomicBool = AtomicBool::new(true);
 static LBUTTONDOWN: AtomicBool = AtomicBool::new(false);
 static RBUTTONDOWN: AtomicBool = AtomicBool::new(false);
-static ESCAPE: AtomicBool = AtomicBool::new(false);
+static START: AtomicBool = AtomicBool::new(false);
 static DPADUP: AtomicBool = AtomicBool::new(false);
 static DPADDOWN: AtomicBool = AtomicBool::new(false);
 static DPADRIGHT: AtomicBool = AtomicBool::new(false);
@@ -72,6 +72,19 @@ unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) 
 unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     let pcode = lparam.0 as *const i32;
     let down = wparam.0 == WM_KEYDOWN as usize;
+    let mouse_enabled = ENABLE_MOUSE.load(Ordering::Relaxed);
+
+    // NB handle CAPS differently to these since it must be triggered in or out
+    // of mouse mouse.
+    if !mouse_enabled {
+        let pairs = vec![(&CODE_BUTTON_START, &START)];
+        for (code, button) in pairs {
+            if *pcode == code.load(Ordering::Relaxed) {
+                button.store(down, Ordering::Relaxed);
+                return LRESULT { 0: 1 };
+            }
+        }
+    }
 
     // Caps lock toggle mouse capture
     if *pcode == 0x14 && down {
@@ -87,12 +100,6 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
         // f2 increases sensitivity
         let last = MOVEMENT_MULTIPLIER.fetch_add(100, Ordering::Relaxed);
         info!("Increased multiplier to {}", last + 100)
-    } else if *pcode == 0x1b && down {
-        ESCAPE.store(true, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
-    } else if *pcode == 0x1b && !down {
-        ESCAPE.store(false, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
     } else if *pcode == 0x25 && down {
         DPADLEFT.store(true, Ordering::Relaxed);
         return LRESULT { 0: 1 };
@@ -148,7 +155,8 @@ fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
         }
 
         gamepad.buttons = XButtons::default();
-        if ESCAPE.load(Ordering::Relaxed) {
+        if START.load(Ordering::Relaxed) {
+            info!("Start pressed");
             gamepad.buttons.raw = gamepad.buttons.raw | XButtons::START;
         }
         if DPADUP.load(Ordering::Relaxed) {
@@ -286,13 +294,6 @@ fn run_messages() -> Result<()> {
         Box::new(|_cc| Box::new(SerfApp::default())),
     );
 
-    /*
-    loop {
-        GetMessageA(&mut message, HWND(0), 0, 0);
-        TranslateMessage(&mut message);
-        DispatchMessageA(&mut message);
-    }
-    */
     Ok(())
 }
 
@@ -300,9 +301,22 @@ fn main() {
     unsafe {
         AttachConsole(ATTACH_PARENT_PROCESS);
     }
-    env_logger::init();
+    // Normally this won't be launched from a console;
+    // logging is strictly for development.
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .init();
 
     if let Err(e) = run_messages() {
         error!("{:?}", e);
+        unsafe {
+            let message = format!("{:?}", e);
+            MessageBoxA(
+                None,
+                Some(PCSTR::from_raw(message.as_ptr())),
+                s!("Error"),
+                MB_OK,
+            );
+        }
     }
 }
