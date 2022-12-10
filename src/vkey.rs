@@ -1,0 +1,108 @@
+pub static KEYS: &'static [(&'static str, Option<i32>)] = &[
+    ("None", None),
+    ("Backspace", Some(0x08)),
+    ("Tab", Some(0x09)),
+    ("Clear", Some(0x0c)),
+    ("Enter", Some(0x0d)),
+    ("Shift", Some(0x10)),
+    ("Control", Some(0x11)),
+    ("Alt", Some(0x12)),
+    ("Pause", Some(0x14)),
+    ("Escape", Some(0x1b)),
+    ("Spacebar", Some(0x20)),
+    ("Page Up", Some(0x21)),
+    ("Page Down", Some(0x22)),
+    ("End", Some(0x23)),
+    ("Home", Some(0x24)),
+    ("Left Arrow", Some(0x25)),
+    ("Up Arrow", Some(0x26)),
+    ("Right Arrow", Some(0x27)),
+    ("Down Arrow", Some(0x28)),
+    ("Select", Some(0x29)),
+    ("Print Screen", Some(0x2c)),
+    ("Insert", Some(0x2d)),
+    ("Delete", Some(0x2e)),
+    ("Help", Some(0x2f)),
+    ("0", Some(0x30)),
+    ("1", Some(0x31)),
+    ("2", Some(0x32)),
+    ("3", Some(0x33)),
+    ("4", Some(0x34)),
+    ("5", Some(0x35)),
+    ("6", Some(0x36)),
+    ("7", Some(0x37)),
+    ("8", Some(0x38)),
+    ("9", Some(0x39)),
+    ("A", Some(0x41)),
+    ("B", Some(0x42)),
+    ("C", Some(0x43)),
+    ("D", Some(0x44)),
+    ("E", Some(0x45)),
+    ("F", Some(0x46)),
+    ("G", Some(0x47)),
+    ("H", Some(0x48)),
+    ("I", Some(0x49)),
+    ("J", Some(0x4a)),
+    ("K", Some(0x4b)),
+    ("L", Some(0x4c)),
+    ("M", Some(0x4d)),
+    ("N", Some(0x4e)),
+    ("O", Some(0x4f)),
+    ("P", Some(0x50)),
+    ("Q", Some(0x51)),
+    ("R", Some(0x52)),
+    ("S", Some(0x53)),
+    ("T", Some(0x54)),
+    ("U", Some(0x55)),
+    ("V", Some(0x56)),
+    ("W", Some(0x57)),
+    ("X", Some(0x58)),
+    ("Y", Some(0x59)),
+    ("Z", Some(0x5a)),
+    ("Left Windows", Some(0x5b)),
+    ("Right Windows", Some(0x5c)),
+    ("Numpad 0", Some(0x60)),
+    ("Numpad 1", Some(0x61)),
+    ("Numpad 2", Some(0x62)),
+    ("Numpad 3", Some(0x63)),
+    ("Numpad 4", Some(0x64)),
+    ("Numpad 5", Some(0x65)),
+    ("Numpad 6", Some(0x56)),
+    ("Numpad 7", Some(0x57)),
+    ("Numpad 8", Some(0x68)),
+    ("Numpad 9", Some(0x69)),
+    ("F1", Some(0x70)),
+    ("F2", Some(0x71)),
+    ("F3", Some(0x72)),
+    ("F4", Some(0x73)),
+    ("F5", Some(0x74)),
+    ("F6", Some(0x75)),
+    ("F7", Some(0x76)),
+    ("F8", Some(0x77)),
+    ("F9", Some(0x78)),
+    ("F10", Some(0x79)),
+    ("Left Shift", Some(0xa0)),
+    ("Right Shift", Some(0xa1)),
+    ("Left Control", Some(0xa2)),
+    ("Right Control", Some(0xa3)),
+    ("Left Alt", Some(0xa4)),
+    ("Right Alt", Some(0xa5)),
+];
+
+pub fn label_for_code(code: &Option<i32>) -> &'static str {
+    for (l, c) in KEYS {
+        if c == code {
+            return l;
+        }
+    }
+    return "None";
+}
+
+pub fn code_for_label(label: &str) -> Option<i32> {
+    for (l, c) in KEYS {
+        if *l == label {
+            return c.clone();
+        }
+    }
+    return None;
+}
