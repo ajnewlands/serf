@@ -1,18 +1,26 @@
+#![windows_subsystem = "windows"]
 use anyhow::Result;
 use log::{error, info};
 use std::ffi::c_void;
-use std::sync::atomic::{AtomicBool, AtomicI16, AtomicI32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI16, AtomicI32, AtomicU64, Ordering};
 
 mod ui;
 mod vkey;
 use ui::*;
 use vigem_client::*;
 use windows::{
-    core::*, Win32::Devices::HumanInterfaceDevice::*, Win32::Foundation::*,
-    Win32::System::LibraryLoader::*, Win32::UI::Input::*, Win32::UI::WindowsAndMessaging::*,
+    core::*,
+    Win32::Devices::HumanInterfaceDevice::*,
+    Win32::Foundation::*,
+    Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS},
+    Win32::System::LibraryLoader::*,
+    Win32::UI::Input::*,
+    Win32::UI::WindowsAndMessaging::*,
 };
 
 static MOVEMENT_MULTIPLIER: AtomicI16 = AtomicI16::new(1400);
+static INTERVAL_MICROS: AtomicU64 = AtomicU64::new(2000);
+
 static ENABLE_MOUSE: AtomicBool = AtomicBool::new(true);
 static LBUTTONDOWN: AtomicBool = AtomicBool::new(false);
 static RBUTTONDOWN: AtomicBool = AtomicBool::new(false);
@@ -23,6 +31,22 @@ static DPADRIGHT: AtomicBool = AtomicBool::new(false);
 static DPADLEFT: AtomicBool = AtomicBool::new(false);
 static X: AtomicI32 = AtomicI32::new(0);
 static Y: AtomicI32 = AtomicI32::new(0);
+
+static CODE_DPAD_L: AtomicI32 = AtomicI32::new(0);
+static CODE_DPAD_R: AtomicI32 = AtomicI32::new(0);
+static CODE_DPAD_U: AtomicI32 = AtomicI32::new(0);
+static CODE_DPAD_D: AtomicI32 = AtomicI32::new(0);
+static CODE_LSTICK_L: AtomicI32 = AtomicI32::new(0);
+static CODE_LSTICK_R: AtomicI32 = AtomicI32::new(0);
+static CODE_LSTICK_U: AtomicI32 = AtomicI32::new(0);
+static CODE_LSTICK_D: AtomicI32 = AtomicI32::new(0);
+static CODE_BUTTON_A: AtomicI32 = AtomicI32::new(0);
+static CODE_BUTTON_B: AtomicI32 = AtomicI32::new(0);
+static CODE_BUTTON_X: AtomicI32 = AtomicI32::new(0);
+static CODE_BUTTON_Y: AtomicI32 = AtomicI32::new(0);
+static CODE_BUTTON_START: AtomicI32 = AtomicI32::new(0);
+static CODE_SHOULDER_L: AtomicI32 = AtomicI32::new(0);
+static CODE_SHOULDER_R: AtomicI32 = AtomicI32::new(0);
 
 unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     let mouse_enabled = ENABLE_MOUSE.load(Ordering::Relaxed);
@@ -103,7 +127,9 @@ fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
 
     info!("Virtual gamepad attached.");
     loop {
-        std::thread::sleep(std::time::Duration::from_micros(2000)); // 250 HZ poll rate
+        std::thread::sleep(std::time::Duration::from_micros(
+            INTERVAL_MICROS.load(Ordering::Relaxed),
+        )); // 250 HZ poll rate
         let multiplier = MOVEMENT_MULTIPLIER.load(Ordering::Relaxed);
         let thumb_rx = i16::saturating_mul(X.swap(0, Ordering::Relaxed) as i16, multiplier);
         let thumb_ry = i16::saturating_mul(Y.swap(0, Ordering::Relaxed) as i16, multiplier);
@@ -271,6 +297,9 @@ fn run_messages() -> Result<()> {
 }
 
 fn main() {
+    unsafe {
+        AttachConsole(ATTACH_PARENT_PROCESS);
+    }
     env_logger::init();
 
     if let Err(e) = run_messages() {
