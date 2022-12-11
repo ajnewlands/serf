@@ -34,15 +34,17 @@ impl Default for SerfApp {
             lstickd: code_for_label("S"),
             lstickr: code_for_label("A"),
             lstickl: code_for_label("D"),
-            buttona: code_for_label("H"),
-            buttonb: code_for_label("J"),
-            buttonx: code_for_label("K"),
-            buttony: code_for_label("L"),
+            buttona: code_for_label("Spacebar"),
+            buttonb: code_for_label("Left Control"),
+            buttonx: code_for_label("F"),
+            buttony: code_for_label("1"),
             start: code_for_label("Escape"),
-            shoulderl: None,
-            shoulderr: None,
+            shoulderl: code_for_label("Q"),
+            shoulderr: code_for_label("E"),
             movement_multiplier: 1400,
             sampling_interval: 2000,
+            // need to add left stick squeeze = shift
+            // need to add right stick squeeze = V (melee) / Mouse wheel down?
         }
     }
 }

@@ -136,7 +136,8 @@ fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
     loop {
         std::thread::sleep(std::time::Duration::from_micros(
             INTERVAL_MICROS.load(Ordering::Relaxed),
-        )); // 250 HZ poll rate
+        ));
+        let start = std::time::Instant::now();
         let multiplier = MOVEMENT_MULTIPLIER.load(Ordering::Relaxed);
         let thumb_rx = i16::saturating_mul(X.swap(0, Ordering::Relaxed) as i16, multiplier);
         let thumb_ry = i16::saturating_mul(Y.swap(0, Ordering::Relaxed) as i16, multiplier);
@@ -175,6 +176,12 @@ fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
         target
             .update(&gamepad)
             .expect("should be able to update our gamepad");
+
+        // TODO once mapped all buttons, take this out.
+        info!(
+            "Processing took {} micros",
+            (std::time::Instant::now() - start).as_micros()
+        );
     }
 }
 
