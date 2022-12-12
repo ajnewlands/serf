@@ -63,4 +63,10 @@ pub fn apply_button_map(map: &common::ButtonMapping) {
     ] {
         control.store(vcode, std::sync::atomic::Ordering::Relaxed);
     }
+
+    INTERVAL_MICROS.store(map.sampling_interval, std::sync::atomic::Ordering::Relaxed);
+    MOVEMENT_MULTIPLIER.store(
+        map.movement_multiplier,
+        std::sync::atomic::Ordering::Relaxed,
+    );
 }
