@@ -1,52 +1,22 @@
 #![windows_subsystem = "windows"]
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::{error, info};
 use std::ffi::c_void;
-use std::sync::atomic::{AtomicBool, AtomicI16, AtomicI32, AtomicU64, Ordering};
+use std::sync::atomic::Ordering;
+mod statics;
+use statics::*;
 
-mod ui;
-mod vkey;
-use ui::*;
+mod controller;
 use vigem_client::*;
 use windows::{
     core::*,
     Win32::Devices::HumanInterfaceDevice::*,
     Win32::Foundation::*,
     Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS},
-    Win32::System::LibraryLoader::*,
+    Win32::System::{DataExchange::COPYDATASTRUCT, LibraryLoader::*},
     Win32::UI::Input::*,
     Win32::UI::WindowsAndMessaging::*,
 };
-
-static MOVEMENT_MULTIPLIER: AtomicI16 = AtomicI16::new(1400);
-static INTERVAL_MICROS: AtomicU64 = AtomicU64::new(2000);
-
-static ENABLE_MOUSE: AtomicBool = AtomicBool::new(true);
-static LBUTTONDOWN: AtomicBool = AtomicBool::new(false);
-static RBUTTONDOWN: AtomicBool = AtomicBool::new(false);
-static START: AtomicBool = AtomicBool::new(false);
-static DPADUP: AtomicBool = AtomicBool::new(false);
-static DPADDOWN: AtomicBool = AtomicBool::new(false);
-static DPADRIGHT: AtomicBool = AtomicBool::new(false);
-static DPADLEFT: AtomicBool = AtomicBool::new(false);
-static X: AtomicI32 = AtomicI32::new(0);
-static Y: AtomicI32 = AtomicI32::new(0);
-
-static CODE_DPAD_L: AtomicI32 = AtomicI32::new(0);
-static CODE_DPAD_R: AtomicI32 = AtomicI32::new(0);
-static CODE_DPAD_U: AtomicI32 = AtomicI32::new(0);
-static CODE_DPAD_D: AtomicI32 = AtomicI32::new(0);
-static CODE_LSTICK_L: AtomicI32 = AtomicI32::new(0);
-static CODE_LSTICK_R: AtomicI32 = AtomicI32::new(0);
-static CODE_LSTICK_U: AtomicI32 = AtomicI32::new(0);
-static CODE_LSTICK_D: AtomicI32 = AtomicI32::new(0);
-static CODE_BUTTON_A: AtomicI32 = AtomicI32::new(0);
-static CODE_BUTTON_B: AtomicI32 = AtomicI32::new(0);
-static CODE_BUTTON_X: AtomicI32 = AtomicI32::new(0);
-static CODE_BUTTON_Y: AtomicI32 = AtomicI32::new(0);
-static CODE_BUTTON_START: AtomicI32 = AtomicI32::new(0);
-static CODE_SHOULDER_L: AtomicI32 = AtomicI32::new(0);
-static CODE_SHOULDER_R: AtomicI32 = AtomicI32::new(0);
 
 unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     let mouse_enabled = ENABLE_MOUSE.load(Ordering::Relaxed);
@@ -77,7 +47,23 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
     // NB handle CAPS differently to these since it must be triggered in or out
     // of mouse mouse.
     if !mouse_enabled {
-        let pairs = vec![(&CODE_BUTTON_START, &START)];
+        let pairs = vec![
+            (&CODE_BUTTON_START, &START),
+            (&CODE_DPAD_U, &DPADUP),
+            (&CODE_DPAD_D, &DPADDOWN),
+            (&CODE_DPAD_R, &DPADRIGHT),
+            (&CODE_DPAD_L, &DPADLEFT),
+            (&CODE_BUTTON_A, &BUTTONA),
+            (&CODE_BUTTON_B, &BUTTONB),
+            (&CODE_BUTTON_X, &BUTTONX),
+            (&CODE_BUTTON_Y, &BUTTONY),
+            (&CODE_SHOULDER_L, &SHOULDER_L),
+            (&CODE_SHOULDER_R, &SHOULDER_R),
+            (&CODE_LSTICK_D, &LSTICKDOWN),
+            (&CODE_LSTICK_U, &LSTICKUP),
+            (&CODE_LSTICK_R, &LSTICKRIGHT),
+            (&CODE_LSTICK_L, &LSTICKLEFT),
+        ];
         for (code, button) in pairs {
             if *pcode == code.load(Ordering::Relaxed) {
                 button.store(down, Ordering::Relaxed);
@@ -100,95 +86,20 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
         // f2 increases sensitivity
         let last = MOVEMENT_MULTIPLIER.fetch_add(100, Ordering::Relaxed);
         info!("Increased multiplier to {}", last + 100)
-    } else if *pcode == 0x25 && down {
-        DPADLEFT.store(true, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
-    } else if *pcode == 0x25 && !down {
-        DPADLEFT.store(false, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
-    } else if *pcode == 0x26 && down {
-        DPADUP.store(true, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
-    } else if *pcode == 0x26 && !down {
-        DPADUP.store(false, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
-    } else if *pcode == 0x27 && down {
-        DPADRIGHT.store(true, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
-    } else if *pcode == 0x27 && !down {
-        DPADRIGHT.store(false, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
-    } else if *pcode == 0x28 && down {
-        DPADDOWN.store(true, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
-    } else if *pcode == 0x28 && !down {
-        DPADDOWN.store(false, Ordering::Relaxed);
-        return LRESULT { 0: 1 };
     }
-
     return CallNextHookEx(None, code, wparam, lparam);
-}
-
-fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
-    info!("Launching serf controller.");
-
-    info!("Virtual gamepad attached.");
-    loop {
-        std::thread::sleep(std::time::Duration::from_micros(
-            INTERVAL_MICROS.load(Ordering::Relaxed),
-        ));
-        let start = std::time::Instant::now();
-        let multiplier = MOVEMENT_MULTIPLIER.load(Ordering::Relaxed);
-        let thumb_rx = i16::saturating_mul(X.swap(0, Ordering::Relaxed) as i16, multiplier);
-        let thumb_ry = i16::saturating_mul(Y.swap(0, Ordering::Relaxed) as i16, multiplier);
-
-        gamepad.thumb_rx = thumb_rx;
-        gamepad.thumb_ry = thumb_ry;
-        if RBUTTONDOWN.load(Ordering::Relaxed) {
-            gamepad.left_trigger = 255;
-        } else {
-            gamepad.left_trigger = 0;
-        }
-        if LBUTTONDOWN.load(Ordering::Relaxed) {
-            gamepad.right_trigger = 255;
-        } else {
-            gamepad.right_trigger = 0;
-        }
-
-        gamepad.buttons = XButtons::default();
-        if START.load(Ordering::Relaxed) {
-            info!("Start pressed");
-            gamepad.buttons.raw = gamepad.buttons.raw | XButtons::START;
-        }
-        if DPADUP.load(Ordering::Relaxed) {
-            gamepad.buttons.raw = gamepad.buttons.raw | XButtons::UP;
-        }
-        if DPADDOWN.load(Ordering::Relaxed) {
-            gamepad.buttons.raw = gamepad.buttons.raw | XButtons::DOWN;
-        }
-        if DPADRIGHT.load(Ordering::Relaxed) {
-            gamepad.buttons.raw = gamepad.buttons.raw | XButtons::RIGHT;
-        }
-        if DPADLEFT.load(Ordering::Relaxed) {
-            gamepad.buttons.raw = gamepad.buttons.raw | XButtons::LEFT;
-        }
-
-        target
-            .update(&gamepad)
-            .expect("should be able to update our gamepad");
-
-        // TODO once mapped all buttons, take this out.
-        info!(
-            "Processing took {} micros",
-            (std::time::Instant::now() - start).as_micros()
-        );
-    }
 }
 
 extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     let mouse_enabled = ENABLE_MOUSE.load(Ordering::Relaxed);
     unsafe {
         match message {
+            WM_COPYDATA => {
+                let pdata: *const COPYDATASTRUCT = lparam.0 as *const u8 as *const COPYDATASTRUCT;
+                let pbmap = (*pdata).lpData as *mut common::ButtonMapping;
+                statics::apply_button_map(&*pbmap);
+                return LRESULT(1);
+            }
             WM_INPUT => {
                 if mouse_enabled {
                     return LRESULT(0);
@@ -234,13 +145,13 @@ fn run_messages() -> Result<()> {
     target.wait_ready()?;
     let gamepad = vigem_client::XGamepad::default();
 
-    let _thread = std::thread::spawn(move || run_controller(gamepad, target));
-
+    // Run the actual gamepad thingy.
+    let _thread = std::thread::spawn(move || controller::run_controller(gamepad, target));
     unsafe {
         let instance = GetModuleHandleA(None)?;
         debug_assert!(instance.0 != 0);
 
-        let window_class = s!("window");
+        let window_class = s!("serf-message-window");
 
         let wc = WNDCLASSA {
             lpfnWndProc: Some(wndproc),
@@ -256,7 +167,7 @@ fn run_messages() -> Result<()> {
         let hwnd = CreateWindowExA(
             WINDOW_EX_STYLE::default(),
             window_class,
-            s!("message"),
+            s!("serf-controller"),
             WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
@@ -286,22 +197,44 @@ fn run_messages() -> Result<()> {
         let _keyboard_hook =
             SetWindowsHookExA(WH_KEYBOARD_LL, Some(keyboard_hook), Some(instance), 0)?;
         let _mouse_hook = SetWindowsHookExA(WH_MOUSE_LL, Some(mouse_hook), Some(instance), 0)?;
-
-        let mut message = MSG::default();
-        info!("Waiting for messages");
     }
-    let options = eframe::NativeOptions {
-        initial_window_size: Some(eframe::egui::vec2(460.0, 340.0)),
-        resizable: false,
-        ..Default::default()
-    };
-    eframe::run_native(
-        "Serf - the console peasants are revolting",
-        options,
-        Box::new(|_cc| Box::new(SerfApp::default())),
-    );
 
-    Ok(())
+    // Now spawn the front end instance.
+
+    let mut dir = std::env::current_exe().context("Couldn't get executable container directory")?;
+    dir.pop();
+    dir.push("serf-ui.exe");
+    let mut child = std::process::Command::new(dir)
+        .spawn()
+        .context("Failed to launch front end")?;
+    std::thread::spawn(move || match child.wait() {
+        Ok(_) => {
+            info!("Closing due to front end shutdown");
+            std::process::exit(0);
+        }
+        Err(e) => {
+            let message = format!("{:?}", e);
+            unsafe {
+                MessageBoxA(
+                    None,
+                    Some(PCSTR::from_raw(message.as_ptr())),
+                    s!("Error"),
+                    MB_OK,
+                );
+            }
+            std::process::exit(1);
+        }
+    });
+
+    // Now do actual message processing.
+    let mut message = MSG::default();
+    loop {
+        unsafe {
+            GetMessageA(&mut message, None, 0, 0);
+            TranslateMessage(&mut message);
+            DispatchMessageA(&mut message);
+        }
+    }
 }
 
 fn main() {
