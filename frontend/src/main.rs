@@ -1,8 +1,10 @@
 #![windows_subsystem = "windows"]
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::{error, info};
 
 mod ui;
+use crossbeam::channel::*;
+use once_cell::sync::OnceCell;
 use ui::*;
 use windows::{
     core::*,
@@ -13,6 +15,9 @@ use windows::{
         UI::WindowsAndMessaging::*,
     },
 };
+
+static CONTEXT: OnceCell<eframe::egui::Context> = OnceCell::new();
+static TX: OnceCell<Sender<common::ButtonMapping>> = OnceCell::new();
 
 fn exit_with_error(e: anyhow::Error) {
     unsafe {
@@ -31,7 +36,16 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
     unsafe {
         match message {
             WM_COPYDATA => {
-                info!("copy data");
+                let pdata: *const COPYDATASTRUCT = lparam.0 as *const u8 as *const COPYDATASTRUCT;
+                let pbmap = (*pdata).lpData as *mut common::ButtonMapping;
+                TX.get()
+                    .expect("TX hasn't been initialized.")
+                    .send((*pbmap).clone())
+                    .expect("Failed to send updated button map to UI");
+                CONTEXT
+                    .get()
+                    .expect("Context hasn't been initialized.")
+                    .request_repaint();
                 return LRESULT(1);
             }
             WM_DESTROY => {
@@ -61,7 +75,7 @@ fn run_frontend() -> Result<()> {
 
         let _atom = RegisterClassA(&wc);
 
-        let hwnd = CreateWindowExA(
+        let _hwnd = CreateWindowExA(
             WINDOW_EX_STYLE::default(),
             window_class,
             s!("serf-frontend"),
@@ -84,7 +98,14 @@ fn run_frontend() -> Result<()> {
         ..Default::default()
     };
 
-    let app = Box::new(SerfApp::default());
+    let (tx, rx) = unbounded::<common::ButtonMapping>();
+    TX.set(tx)
+        .map_err(|_| anyhow::anyhow!("TX already initialized."))?;
+    let app = Box::new(SerfApp {
+        map: common::ButtonMapping::default(),
+        previous: common::ButtonMapping::default(),
+        rx: rx,
+    });
     eframe::run_native(
         "Serf - the console peasants are revolting",
         options,

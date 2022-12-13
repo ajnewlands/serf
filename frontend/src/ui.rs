@@ -1,7 +1,6 @@
 use common::vkey::*;
 use eframe::egui;
 use egui_extras::{Size, TableBuilder};
-use log::info;
 use windows::{
     s,
     Win32::{
@@ -14,13 +13,16 @@ use windows::{
 use crate::exit_with_error;
 
 pub struct SerfApp {
-    map: common::ButtonMapping,
-    previous: common::ButtonMapping,
+    pub map: common::ButtonMapping,
+    pub previous: common::ButtonMapping,
+    pub rx: crossbeam::channel::Receiver<common::ButtonMapping>,
 }
 
+/*
 impl Default for SerfApp {
     fn default() -> Self {
         Self {
+            rx:
             map: common::ButtonMapping {
                 dpadl: code_for_label("Left Arrow"),
                 dpadr: code_for_label("Right Arrow"),
@@ -46,6 +48,7 @@ impl Default for SerfApp {
         }
     }
 }
+*/
 
 fn selection_dropdown(label: &str, variable: &mut i32, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
@@ -62,8 +65,13 @@ fn selection_dropdown(label: &str, variable: &mut i32, ui: &mut egui::Ui) {
 
 impl eframe::App for SerfApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        _ = crate::CONTEXT.set(ctx.clone());
         let dark = egui::Visuals::dark();
         ctx.set_visuals(egui::Visuals { ..dark });
+
+        if let Ok(new_button_map) = self.rx.try_recv() {
+            self.map = new_button_map;
+        }
 
         // On each update, send out the updated configuration to the controller backend.
         if self.previous != self.map {
@@ -76,7 +84,7 @@ impl eframe::App for SerfApp {
                 }
                 let mut data = self.map.clone();
                 let copydata = COPYDATASTRUCT {
-                    dwData: 0,
+                    dwData: common::CopyTypes::ButtonMap as usize,
                     cbData: std::mem::size_of::<common::ButtonMapping>() as u32,
                     lpData: (&mut data) as *mut common::ButtonMapping as *mut std::ffi::c_void,
                 };

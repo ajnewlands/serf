@@ -1,11 +1,11 @@
 pub mod vkey;
 pub use vkey::*;
 
-#[derive(Debug, Clone)]
-pub enum Signals {
-    CapturingMouse = 0,
-    ReleasingMouse = 1,
-    Terminating = 2,
+#[repr(usize)]
+pub enum CopyTypes {
+    ButtonMap = 0,
+    CaptureMouse = 1,
+    ReleaseMouse = 2,
 }
 
 #[derive(Default, Debug, Clone, Eq, PartialEq)]

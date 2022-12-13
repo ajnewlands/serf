@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, AtomicI16, AtomicI32, AtomicU64};
+use std::sync::atomic::{AtomicBool, AtomicI16, AtomicI32, AtomicU64, Ordering};
 
 pub static MOVEMENT_MULTIPLIER: AtomicI16 = AtomicI16::new(1400);
 pub static INTERVAL_MICROS: AtomicU64 = AtomicU64::new(2000);
@@ -57,7 +57,6 @@ pub fn apply_button_map(map: &common::ButtonMapping) {
         (&CODE_BUTTON_X, map.buttonx),
         (&CODE_BUTTON_Y, map.buttony),
         (&CODE_BUTTON_START, map.start),
-        (&CODE_BUTTON_Y, map.buttona),
         (&CODE_SHOULDER_L, map.shoulderl),
         (&CODE_SHOULDER_R, map.shoulderr),
     ] {
@@ -69,4 +68,26 @@ pub fn apply_button_map(map: &common::ButtonMapping) {
         map.movement_multiplier,
         std::sync::atomic::Ordering::Relaxed,
     );
+}
+
+pub fn create_button_map() -> common::ButtonMapping {
+    common::ButtonMapping {
+        dpadl: CODE_DPAD_L.load(Ordering::Relaxed),
+        dpadu: CODE_DPAD_U.load(Ordering::Relaxed),
+        dpadr: CODE_DPAD_R.load(Ordering::Relaxed),
+        dpadd: CODE_DPAD_D.load(Ordering::Relaxed),
+        lstickl: CODE_LSTICK_L.load(Ordering::Relaxed),
+        lsticku: CODE_LSTICK_U.load(Ordering::Relaxed),
+        lstickr: CODE_LSTICK_R.load(Ordering::Relaxed),
+        lstickd: CODE_LSTICK_D.load(Ordering::Relaxed),
+        buttona: CODE_BUTTON_A.load(Ordering::Relaxed),
+        buttonb: CODE_BUTTON_B.load(Ordering::Relaxed),
+        buttonx: CODE_BUTTON_X.load(Ordering::Relaxed),
+        buttony: CODE_BUTTON_Y.load(Ordering::Relaxed),
+        start: CODE_BUTTON_START.load(Ordering::Relaxed),
+        shoulderl: CODE_SHOULDER_L.load(Ordering::Relaxed),
+        shoulderr: CODE_SHOULDER_R.load(Ordering::Relaxed),
+        movement_multiplier: MOVEMENT_MULTIPLIER.load(Ordering::Relaxed),
+        sampling_interval: INTERVAL_MICROS.load(Ordering::Relaxed),
+    }
 }

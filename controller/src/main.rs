@@ -1,5 +1,5 @@
 #![windows_subsystem = "windows"]
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use log::{error, info};
 use std::ffi::c_void;
 use std::sync::atomic::Ordering;
@@ -81,13 +81,52 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
     } else if *pcode == 0x70 && down {
         // f1 decreases sensitivity
         let last = MOVEMENT_MULTIPLIER.fetch_sub(100, Ordering::Relaxed);
-        info!("Decreased multiplier to {}", last - 100)
+        info!("Decreased multiplier to {}", last - 100);
+        send_updated_buttonmap();
     } else if *pcode == 0x71 && down {
         // f2 increases sensitivity
         let last = MOVEMENT_MULTIPLIER.fetch_add(100, Ordering::Relaxed);
-        info!("Increased multiplier to {}", last + 100)
+        info!("Increased multiplier to {}", last + 100);
+        send_updated_buttonmap();
     }
     return CallNextHookEx(None, code, wparam, lparam);
+}
+
+fn send_updated_buttonmap() {
+    unsafe {
+        let hwui = FindWindowA(s!("serf-message-window"), s!("serf-frontend"));
+        if hwui.0 == 0 {
+            exit_with_error(anyhow!("Could not find message sink for front end"));
+        }
+        let mut data = create_button_map();
+        let copydata = COPYDATASTRUCT {
+            dwData: common::CopyTypes::ButtonMap as usize,
+            cbData: std::mem::size_of::<common::ButtonMapping>() as u32,
+            lpData: (&mut data) as *mut common::ButtonMapping as *mut std::ffi::c_void,
+        };
+        let res = SendMessageA(
+            hwui,
+            WM_COPYDATA,
+            WPARAM(0),
+            LPARAM(&copydata as *const COPYDATASTRUCT as isize),
+        );
+        if res.0 != 1 {
+            exit_with_error(anyhow!("Failed dispatch message to sink for front end"));
+        }
+    }
+}
+
+fn exit_with_error(e: anyhow::Error) {
+    unsafe {
+        let message = format!("{:?}", e);
+        error!("{}", message);
+        MessageBoxA(
+            None,
+            Some(PCSTR::from_raw(message.as_ptr())),
+            s!("Error"),
+            MB_OK,
+        );
+    }
 }
 
 extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
