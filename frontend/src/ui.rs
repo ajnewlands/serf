@@ -17,6 +17,7 @@ pub struct SerfApp {
     pub configuration: common::Configuration,
     pub previous: common::ButtonMapping,
     pub rx: crossbeam::channel::Receiver<common::ButtonMapping>,
+    pub rename: bool,
 }
 
 fn selection_dropdown(label: &str, variable: &mut i32, ui: &mut egui::Ui) {
@@ -54,8 +55,8 @@ fn game_selection_dropdown(
 impl eframe::App for SerfApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         _ = crate::CONTEXT.set(ctx.clone());
-        let dark = egui::Visuals::dark();
-        ctx.set_visuals(egui::Visuals { ..dark });
+        //let dark = egui::Visuals::dark();
+        //ctx.set_visuals(egui::Visuals { ..dark });
 
         let games = self.configuration.games.clone();
         let active_game = &mut self.configuration.games[self.active_game_index];
@@ -103,7 +104,7 @@ impl eframe::App for SerfApp {
                 );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
-                        .add_sized([40., 20.], egui::Button::new("\u{2795}"))
+                        .add_sized([40., 18.], egui::Button::new("\u{2795}"))
                         .on_hover_text("New")
                         .clicked()
                     {
@@ -114,7 +115,7 @@ impl eframe::App for SerfApp {
                         self.active_game_index = self.configuration.games.len() - 1;
                     }
                     if ui
-                        .add_sized([40., 20.], egui::Button::new("\u{274c}"))
+                        .add_sized([40., 18.], egui::Button::new("\u{274c}"))
                         .on_hover_text("Delete")
                         .clicked()
                     {
@@ -130,9 +131,30 @@ impl eframe::App for SerfApp {
                 });
             });
             ui.horizontal(|ui| {
+                ui.add(
+                    egui::TextEdit::singleline(
+                        &mut self.configuration.games[self.active_game_index].name,
+                    )
+                    .interactive(self.rename)
+                    .desired_width(250.),
+                );
+                if ui
+                    .add_sized(
+                        [30., 18.],
+                        egui::Button::new(if self.rename {
+                            "\u{1f513}"
+                        } else {
+                            "\u{1f512}"
+                        }),
+                    )
+                    .on_hover_text("Unlock name")
+                    .clicked()
+                {
+                    self.rename = !self.rename;
+                }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
-                        .add_sized([40., 20.], egui::Button::new("\u{1f4be}"))
+                        .add_sized([40., 18.], egui::Button::new("\u{1f4be}"))
                         .on_hover_text("Save")
                         .clicked()
                     {
@@ -141,7 +163,7 @@ impl eframe::App for SerfApp {
                             .expect("Unable to write out configuration to disk");
                     }
                     if ui
-                        .add_sized([40., 20.], egui::Button::new("\u{2397}"))
+                        .add_sized([40., 18.], egui::Button::new("\u{2397}"))
                         .on_hover_text("Revert")
                         .clicked()
                     {
