@@ -42,6 +42,9 @@ pub fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
             (&BUTTONY, XButtons::Y),
             (&SHOULDER_L, XButtons::LB),
             (&SHOULDER_R, XButtons::RB),
+            (&THUMB_L, XButtons::LTHUMB),
+            (&THUMB_R, XButtons::RTHUMB),
+            (&BACK, XButtons::BACK),
         ];
         for (is_pressed, button) in button_map {
             if is_pressed.load(Ordering::Relaxed) {

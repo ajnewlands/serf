@@ -1,6 +1,11 @@
 pub mod vkey;
 pub use vkey::*;
 
+pub mod configuration;
+pub use configuration::*;
+
+use serde::{Deserialize, Serialize};
+
 #[repr(usize)]
 pub enum CopyTypes {
     ButtonMap = 0,
@@ -8,7 +13,7 @@ pub enum CopyTypes {
     ReleaseMouse = 2,
 }
 
-#[derive(Default, Debug, Clone, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ButtonMapping {
     pub dpadl: i32,
     pub dpadr: i32,
@@ -24,7 +29,10 @@ pub struct ButtonMapping {
     pub buttony: i32,
     pub shoulderl: i32,
     pub shoulderr: i32,
+    pub lthumb: i32,
+    pub rthumb: i32,
     pub start: i32,
+    pub back: i32,
     pub movement_multiplier: i16,
     pub sampling_interval: u64,
 }

@@ -18,38 +18,6 @@ pub struct SerfApp {
     pub rx: crossbeam::channel::Receiver<common::ButtonMapping>,
 }
 
-/*
-impl Default for SerfApp {
-    fn default() -> Self {
-        Self {
-            rx:
-            map: common::ButtonMapping {
-                dpadl: code_for_label("Left Arrow"),
-                dpadr: code_for_label("Right Arrow"),
-                dpadu: code_for_label("Up Arrow"),
-                dpadd: code_for_label("Down Arrow"),
-                lsticku: code_for_label("W"),
-                lstickd: code_for_label("S"),
-                lstickr: code_for_label("A"),
-                lstickl: code_for_label("D"),
-                buttona: code_for_label("Spacebar"),
-                buttonb: code_for_label("Left Control"),
-                buttonx: code_for_label("F"),
-                buttony: code_for_label("1"),
-                start: code_for_label("Escape"),
-                shoulderl: code_for_label("Q"),
-                shoulderr: code_for_label("E"),
-                movement_multiplier: 1400,
-                sampling_interval: 2000,
-                // need to add left stick squeeze = shift
-                // need to add right stick squeeze = V (melee) / Mouse wheel down?
-            },
-            previous: common::ButtonMapping::default(),
-        }
-    }
-}
-*/
-
 fn selection_dropdown(label: &str, variable: &mut i32, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.add_sized([100., 20.], egui::Label::new(label));
@@ -116,6 +84,14 @@ impl eframe::App for SerfApp {
                                 selection_dropdown("Right shoulder", &mut self.map.shoulderr, ui);
                             });
                         });
+                        body.row(20.0, |mut row| {
+                            row.col(|ui| {
+                                selection_dropdown("Left thumb", &mut self.map.lthumb, ui);
+                            });
+                            row.col(|ui| {
+                                selection_dropdown("Right thumb", &mut self.map.rthumb, ui);
+                            });
+                        });
                     });
             });
             ui.separator();
@@ -145,7 +121,9 @@ impl eframe::App for SerfApp {
                             row.col(|ui| {
                                 selection_dropdown("Start", &mut self.map.start, ui);
                             });
-                            row.col(|_ui| {});
+                            row.col(|ui| {
+                                selection_dropdown("Back", &mut self.map.back, ui);
+                            });
                         });
                     });
             });

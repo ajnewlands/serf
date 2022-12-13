@@ -1,6 +1,6 @@
 #![windows_subsystem = "windows"]
-use anyhow::{Context, Result};
-use log::{error, info};
+use anyhow::Result;
+use log::error;
 
 mod ui;
 use crossbeam::channel::*;
@@ -58,6 +58,7 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
 }
 
 fn run_frontend() -> Result<()> {
+    let configuration = common::Configuration::load()?;
     unsafe {
         let instance = GetModuleHandleA(None)?;
         debug_assert!(instance.0 != 0);
@@ -101,8 +102,12 @@ fn run_frontend() -> Result<()> {
     let (tx, rx) = unbounded::<common::ButtonMapping>();
     TX.set(tx)
         .map_err(|_| anyhow::anyhow!("TX already initialized."))?;
+    let map = match configuration.games.first() {
+        Some(map) => map.controls.to_owned(),
+        None => common::ButtonMapping::default(),
+    };
     let app = Box::new(SerfApp {
-        map: common::ButtonMapping::default(),
+        map,
         previous: common::ButtonMapping::default(),
         rx: rx,
     });

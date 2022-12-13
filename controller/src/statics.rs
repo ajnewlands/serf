@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicBool, AtomicI16, AtomicI32, AtomicU64, Ordering};
 
-pub static MOVEMENT_MULTIPLIER: AtomicI16 = AtomicI16::new(1400);
+pub static MOVEMENT_MULTIPLIER: AtomicI16 = AtomicI16::new(2000);
 pub static INTERVAL_MICROS: AtomicU64 = AtomicU64::new(2000);
 
 // Indicate whether a particular controller function is currently active
@@ -22,6 +22,9 @@ pub static BUTTONX: AtomicBool = AtomicBool::new(false);
 pub static BUTTONY: AtomicBool = AtomicBool::new(false);
 pub static SHOULDER_L: AtomicBool = AtomicBool::new(false);
 pub static SHOULDER_R: AtomicBool = AtomicBool::new(false);
+pub static THUMB_L: AtomicBool = AtomicBool::new(false);
+pub static THUMB_R: AtomicBool = AtomicBool::new(false);
+pub static BACK: AtomicBool = AtomicBool::new(false);
 pub static X: AtomicI32 = AtomicI32::new(0);
 pub static Y: AtomicI32 = AtomicI32::new(0);
 
@@ -41,6 +44,9 @@ pub static CODE_BUTTON_Y: AtomicI32 = AtomicI32::new(0);
 pub static CODE_BUTTON_START: AtomicI32 = AtomicI32::new(0);
 pub static CODE_SHOULDER_L: AtomicI32 = AtomicI32::new(0);
 pub static CODE_SHOULDER_R: AtomicI32 = AtomicI32::new(0);
+pub static CODE_THUMB_R: AtomicI32 = AtomicI32::new(0);
+pub static CODE_THUMB_L: AtomicI32 = AtomicI32::new(0);
+pub static CODE_BACK: AtomicI32 = AtomicI32::new(0);
 
 pub fn apply_button_map(map: &common::ButtonMapping) {
     for (control, vcode) in [
@@ -59,6 +65,9 @@ pub fn apply_button_map(map: &common::ButtonMapping) {
         (&CODE_BUTTON_START, map.start),
         (&CODE_SHOULDER_L, map.shoulderl),
         (&CODE_SHOULDER_R, map.shoulderr),
+        (&CODE_THUMB_R, map.rthumb),
+        (&CODE_THUMB_L, map.lthumb),
+        (&CODE_BACK, map.back),
     ] {
         control.store(vcode, std::sync::atomic::Ordering::Relaxed);
     }
@@ -87,6 +96,9 @@ pub fn create_button_map() -> common::ButtonMapping {
         start: CODE_BUTTON_START.load(Ordering::Relaxed),
         shoulderl: CODE_SHOULDER_L.load(Ordering::Relaxed),
         shoulderr: CODE_SHOULDER_R.load(Ordering::Relaxed),
+        lthumb: CODE_THUMB_L.load(Ordering::Relaxed),
+        rthumb: CODE_THUMB_R.load(Ordering::Relaxed),
+        back: CODE_BACK.load(Ordering::Relaxed),
         movement_multiplier: MOVEMENT_MULTIPLIER.load(Ordering::Relaxed),
         sampling_interval: INTERVAL_MICROS.load(Ordering::Relaxed),
     }
