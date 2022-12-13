@@ -23,6 +23,26 @@ impl Default for Game {
 }
 
 impl Configuration {
+    pub fn save(&self) -> Result<()> {
+        // Try to write to the matching location we read from (or initially created).
+        // Try finding a configuration.json in the executable dir
+        let mut edir = std::env::current_exe()?;
+        edir.pop();
+        edir.push("configuration.json");
+        if edir.exists() {
+            std::fs::write(edir, serde_json::to_string_pretty(self)?)?;
+        }
+
+        // Otherwise try to current working directory
+        let mut cdir = std::env::current_dir()?;
+        cdir.push("configuration.json");
+        if cdir.exists() {
+            std::fs::write(cdir, serde_json::to_string_pretty(self)?)?;
+        }
+
+        Ok(())
+    }
+
     pub fn load() -> Result<Self> {
         // Try finding a configuration.json in the executable dir
         let mut edir = std::env::current_exe()?;

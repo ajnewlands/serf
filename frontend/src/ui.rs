@@ -41,7 +41,7 @@ fn game_selection_dropdown(
     ui.horizontal(|ui| {
         ui.add_sized([100., 20.], egui::Label::new(label));
         egui::ComboBox::from_id_source(label)
-            .width(225.)
+            .width(220.)
             .selected_text(format!("{}", games[*active_game_index].name))
             .show_ui(ui, |ui| {
                 for (ix, g) in games.iter().enumerate() {
@@ -102,16 +102,52 @@ impl eframe::App for SerfApp {
                     ui,
                 );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.add_sized([40., 20.], egui::Button::new("\u{2795}"))
-                        .on_hover_text("New");
+                    if ui
+                        .add_sized([40., 20.], egui::Button::new("\u{2795}"))
+                        .on_hover_text("New")
+                        .clicked()
+                    {
+                        self.configuration.games.push(common::Game {
+                            name: "New Game".into(),
+                            controls: common::ButtonMapping::default(),
+                        });
+                        self.active_game_index = self.configuration.games.len() - 1;
+                    }
+                    if ui
+                        .add_sized([40., 20.], egui::Button::new("\u{274c}"))
+                        .on_hover_text("Delete")
+                        .clicked()
+                    {
+                        self.configuration.games.remove(self.active_game_index);
+                        if self.configuration.games.len() == 0 {
+                            self.configuration.games.push(common::Game {
+                                name: "New Game".into(),
+                                controls: common::ButtonMapping::default(),
+                            });
+                        }
+                        self.active_game_index = 0;
+                    }
                 });
             });
             ui.horizontal(|ui| {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.add_sized([40., 20.], egui::Button::new("\u{1f4be}"))
-                        .on_hover_text("Save");
-                    ui.add_sized([40., 20.], egui::Button::new("\u{2397}"))
-                        .on_hover_text("Revert");
+                    if ui
+                        .add_sized([40., 20.], egui::Button::new("\u{1f4be}"))
+                        .on_hover_text("Save")
+                        .clicked()
+                    {
+                        self.configuration
+                            .save()
+                            .expect("Unable to write out configuration to disk");
+                    }
+                    if ui
+                        .add_sized([40., 20.], egui::Button::new("\u{2397}"))
+                        .on_hover_text("Revert")
+                        .clicked()
+                    {
+                        self.configuration = common::Configuration::load()
+                            .expect("Unable to load old configuration from disk");
+                    }
                 });
             });
             ui.separator();
@@ -124,14 +160,18 @@ impl eframe::App for SerfApp {
                             row.col(|ui| {
                                 selection_dropdown(
                                     "Left shoulder",
-                                    &mut active_game.controls.shoulderl,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .shoulderl,
                                     ui,
                                 );
                             });
                             row.col(|ui| {
                                 selection_dropdown(
                                     "Right shoulder",
-                                    &mut active_game.controls.shoulderr,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .shoulderr,
                                     ui,
                                 );
                             });
@@ -140,14 +180,18 @@ impl eframe::App for SerfApp {
                             row.col(|ui| {
                                 selection_dropdown(
                                     "Left thumb",
-                                    &mut active_game.controls.lthumb,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .lthumb,
                                     ui,
                                 );
                             });
                             row.col(|ui| {
                                 selection_dropdown(
                                     "Right thumb",
-                                    &mut active_game.controls.rthumb,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .rthumb,
                                     ui,
                                 );
                             });
@@ -163,26 +207,62 @@ impl eframe::App for SerfApp {
                     .body(|mut body| {
                         body.row(20.0, |mut row| {
                             row.col(|ui| {
-                                selection_dropdown("A", &mut active_game.controls.buttona, ui);
+                                selection_dropdown(
+                                    "A",
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .buttona,
+                                    ui,
+                                );
                             });
                             row.col(|ui| {
-                                selection_dropdown("B", &mut active_game.controls.buttonb, ui);
+                                selection_dropdown(
+                                    "B",
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .buttonb,
+                                    ui,
+                                );
                             });
                         });
                         body.row(20.0, |mut row| {
                             row.col(|ui| {
-                                selection_dropdown("X", &mut active_game.controls.buttonx, ui);
+                                selection_dropdown(
+                                    "X",
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .buttonx,
+                                    ui,
+                                );
                             });
                             row.col(|ui| {
-                                selection_dropdown("Y", &mut active_game.controls.buttony, ui);
+                                selection_dropdown(
+                                    "Y",
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .buttony,
+                                    ui,
+                                );
                             });
                         });
                         body.row(20.0, |mut row| {
                             row.col(|ui| {
-                                selection_dropdown("Start", &mut active_game.controls.start, ui);
+                                selection_dropdown(
+                                    "Start",
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .start,
+                                    ui,
+                                );
                             });
                             row.col(|ui| {
-                                selection_dropdown("Back", &mut active_game.controls.back, ui);
+                                selection_dropdown(
+                                    "Back",
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .back,
+                                    ui,
+                                );
                             });
                         });
                     });
@@ -196,12 +276,20 @@ impl eframe::App for SerfApp {
                     .body(|mut body| {
                         body.row(20.0, |mut row| {
                             row.col(|ui| {
-                                selection_dropdown("DPad Up", &mut active_game.controls.dpadu, ui);
+                                selection_dropdown(
+                                    "DPad Up",
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .dpadu,
+                                    ui,
+                                );
                             });
                             row.col(|ui| {
                                 selection_dropdown(
                                     "DPad Down",
-                                    &mut active_game.controls.dpadd,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .dpadd,
                                     ui,
                                 );
                             });
@@ -210,14 +298,18 @@ impl eframe::App for SerfApp {
                             row.col(|ui| {
                                 selection_dropdown(
                                     "DPad Left",
-                                    &mut active_game.controls.dpadl,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .dpadl,
                                     ui,
                                 );
                             });
                             row.col(|ui| {
                                 selection_dropdown(
                                     "DPad Right",
-                                    &mut active_game.controls.dpadr,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .dpadr,
                                     ui,
                                 );
                             });
@@ -235,14 +327,18 @@ impl eframe::App for SerfApp {
                             row.col(|ui| {
                                 selection_dropdown(
                                     "LStick Up",
-                                    &mut active_game.controls.lsticku,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .lsticku,
                                     ui,
                                 );
                             });
                             row.col(|ui| {
                                 selection_dropdown(
                                     "LStick Down",
-                                    &mut active_game.controls.lstickd,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .lstickd,
                                     ui,
                                 );
                             });
@@ -251,14 +347,18 @@ impl eframe::App for SerfApp {
                             row.col(|ui| {
                                 selection_dropdown(
                                     "LStick Left",
-                                    &mut active_game.controls.lstickl,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .lstickl,
                                     ui,
                                 );
                             });
                             row.col(|ui| {
                                 selection_dropdown(
                                     "LStick Right",
-                                    &mut active_game.controls.lstickr,
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .lstickr,
                                     ui,
                                 );
                             });
@@ -285,7 +385,9 @@ impl eframe::App for SerfApp {
                                 ui.style_mut().spacing.slider_width = 288.;
                                 ui.add(
                                     egui::Slider::new(
-                                        &mut active_game.controls.movement_multiplier,
+                                        &mut self.configuration.games[self.active_game_index]
+                                            .controls
+                                            .movement_multiplier,
                                         0..=8000,
                                     )
                                     .step_by(100.)
@@ -306,7 +408,9 @@ impl eframe::App for SerfApp {
                                 ui.style_mut().spacing.slider_width = 288.;
                                 ui.add(
                                     egui::Slider::new(
-                                        &mut active_game.controls.sampling_interval,
+                                        &mut self.configuration.games[self.active_game_index]
+                                            .controls
+                                            .sampling_interval,
                                         0..=8000,
                                     )
                                     .step_by(100.)
