@@ -7,7 +7,7 @@ pub struct Configuration {
     pub games: Vec<Game>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Game {
     pub name: String,
     pub controls: crate::ButtonMapping,
@@ -68,7 +68,7 @@ impl Configuration {
                     lthumb: code_for_label("Shift"),
                     rthumb: code_for_label("V"),
                     back: code_for_label("Tab"),
-                    movement_multiplier: 1400,
+                    movement_multiplier: 2000,
                     sampling_interval: 2000,
                 }
             },

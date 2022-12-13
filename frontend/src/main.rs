@@ -94,7 +94,7 @@ fn run_frontend() -> Result<()> {
 
     // Show the configuration screen
     let options = eframe::NativeOptions {
-        initial_window_size: Some(eframe::egui::vec2(460.0, 340.0)),
+        initial_window_size: Some(eframe::egui::vec2(460.0, 360.0)),
         resizable: false,
         ..Default::default()
     };
@@ -102,12 +102,9 @@ fn run_frontend() -> Result<()> {
     let (tx, rx) = unbounded::<common::ButtonMapping>();
     TX.set(tx)
         .map_err(|_| anyhow::anyhow!("TX already initialized."))?;
-    let map = match configuration.games.first() {
-        Some(map) => map.controls.to_owned(),
-        None => common::ButtonMapping::default(),
-    };
     let app = Box::new(SerfApp {
-        map,
+        active_game_index: 0,
+        configuration,
         previous: common::ButtonMapping::default(),
         rx: rx,
     });
