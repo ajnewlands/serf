@@ -33,6 +33,10 @@ pub struct ButtonMapping {
     pub rthumb: i32,
     pub start: i32,
     pub back: i32,
+    #[serde(default)]
+    pub left_autofire: bool,
+    #[serde(default)]
+    pub right_autofire: bool,
     pub movement_multiplier: i16,
     pub sampling_interval: u64,
 }

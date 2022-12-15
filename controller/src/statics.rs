@@ -3,6 +3,9 @@ use std::sync::atomic::{AtomicBool, AtomicI16, AtomicI32, AtomicU64, Ordering};
 pub static MOVEMENT_MULTIPLIER: AtomicI16 = AtomicI16::new(2000);
 pub static INTERVAL_MICROS: AtomicU64 = AtomicU64::new(2000);
 
+pub static LEFT_DOWN_INSTANT: AtomicU64 = AtomicU64::new(0);
+pub static RIGHT_DOWN_INSTANT: AtomicU64 = AtomicU64::new(0);
+
 // Indicate whether a particular controller function is currently active
 pub static ENABLE_MOUSE: AtomicBool = AtomicBool::new(true);
 pub static LBUTTONDOWN: AtomicBool = AtomicBool::new(false);
@@ -47,6 +50,8 @@ pub static CODE_SHOULDER_R: AtomicI32 = AtomicI32::new(0);
 pub static CODE_THUMB_R: AtomicI32 = AtomicI32::new(0);
 pub static CODE_THUMB_L: AtomicI32 = AtomicI32::new(0);
 pub static CODE_BACK: AtomicI32 = AtomicI32::new(0);
+pub static LEFT_AUTOFIRE: AtomicBool = AtomicBool::new(false);
+pub static RIGHT_AUTOFIRE: AtomicBool = AtomicBool::new(false);
 
 pub fn apply_button_map(map: &common::ButtonMapping) {
     for (control, vcode) in [
@@ -68,6 +73,12 @@ pub fn apply_button_map(map: &common::ButtonMapping) {
         (&CODE_THUMB_R, map.rthumb),
         (&CODE_THUMB_L, map.lthumb),
         (&CODE_BACK, map.back),
+    ] {
+        control.store(vcode, std::sync::atomic::Ordering::Relaxed);
+    }
+    for (control, vcode) in [
+        (&LEFT_AUTOFIRE, map.left_autofire),
+        (&RIGHT_AUTOFIRE, map.right_autofire),
     ] {
         control.store(vcode, std::sync::atomic::Ordering::Relaxed);
     }
@@ -99,6 +110,8 @@ pub fn create_button_map() -> common::ButtonMapping {
         lthumb: CODE_THUMB_L.load(Ordering::Relaxed),
         rthumb: CODE_THUMB_R.load(Ordering::Relaxed),
         back: CODE_BACK.load(Ordering::Relaxed),
+        left_autofire: LEFT_AUTOFIRE.load(Ordering::Relaxed),
+        right_autofire: RIGHT_AUTOFIRE.load(Ordering::Relaxed),
         movement_multiplier: MOVEMENT_MULTIPLIER.load(Ordering::Relaxed),
         sampling_interval: INTERVAL_MICROS.load(Ordering::Relaxed),
     }

@@ -24,12 +24,28 @@ unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) 
         return LRESULT { 0: 1 };
     } else if !mouse_enabled && wparam.0 == WM_LBUTTONDOWN as usize {
         LBUTTONDOWN.store(true, Ordering::Relaxed);
+
+        if LEFT_AUTOFIRE.load(Ordering::Relaxed) {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("Cant get systemtime")
+                .as_millis() as u64;
+            LEFT_DOWN_INSTANT.store(now, Ordering::Relaxed);
+        }
+
         return LRESULT { 0: 1 };
     } else if !mouse_enabled && wparam.0 == WM_LBUTTONUP as usize {
         LBUTTONDOWN.store(false, Ordering::Relaxed);
         return LRESULT { 0: 1 };
     } else if !mouse_enabled && wparam.0 == WM_RBUTTONDOWN as usize {
         RBUTTONDOWN.store(true, Ordering::Relaxed);
+        if RIGHT_AUTOFIRE.load(Ordering::Relaxed) {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("Cant get systemtime")
+                .as_millis() as u64;
+            RIGHT_DOWN_INSTANT.store(now, Ordering::Relaxed);
+        }
         return LRESULT { 0: 1 };
     } else if !mouse_enabled && wparam.0 == WM_RBUTTONUP as usize {
         RBUTTONDOWN.store(false, Ordering::Relaxed);
@@ -87,6 +103,14 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
         // f2 increases sensitivity
         let last = MOVEMENT_MULTIPLIER.fetch_add(100, Ordering::Relaxed);
         info!("Increased multiplier to {}", last + 100);
+        send_updated_buttonmap();
+    } else if *pcode == 0x74 && down {
+        info!("Toggle left auto fire");
+        LEFT_AUTOFIRE.fetch_xor(true, Ordering::Relaxed);
+        send_updated_buttonmap();
+    } else if *pcode == 0x75 && down {
+        info!("Toggle right auto fire");
+        RIGHT_AUTOFIRE.fetch_xor(true, Ordering::Relaxed);
         send_updated_buttonmap();
     }
     return CallNextHookEx(None, code, wparam, lparam);

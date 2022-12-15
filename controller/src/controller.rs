@@ -18,12 +18,41 @@ pub fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
         gamepad.thumb_rx = thumb_rx;
         gamepad.thumb_ry = thumb_ry;
         if RBUTTONDOWN.load(Ordering::Relaxed) {
-            gamepad.left_trigger = 255;
+            if RIGHT_AUTOFIRE.load(Ordering::Relaxed) {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("Cant get systemtime")
+                    .as_millis() as u64;
+                let delta = now - RIGHT_DOWN_INSTANT.load(Ordering::Relaxed);
+                // 37 ms on, 37 off gives circa 800 RPM.
+                if delta % 74 < 37 {
+                    gamepad.left_trigger = 255;
+                } else {
+                    gamepad.left_trigger = 0;
+                }
+            } else {
+                gamepad.left_trigger = 255;
+            }
         } else {
             gamepad.left_trigger = 0;
         }
         if LBUTTONDOWN.load(Ordering::Relaxed) {
-            gamepad.right_trigger = 255;
+            if LEFT_AUTOFIRE.load(Ordering::Relaxed) {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("Cant get systemtime")
+                    .as_millis() as u64;
+                let delta = now - LEFT_DOWN_INSTANT.load(Ordering::Relaxed);
+                // 37 ms on, 37 off gives circa 800 RPM.
+                if delta % 74 < 37 {
+                    gamepad.right_trigger = 255;
+                } else {
+                    gamepad.right_trigger = 0;
+                }
+            } else {
+                info!("No autofire");
+                gamepad.right_trigger = 255;
+            }
         } else {
             gamepad.right_trigger = 0;
         }

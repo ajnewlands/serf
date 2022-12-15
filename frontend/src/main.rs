@@ -94,7 +94,7 @@ fn run_frontend() -> Result<()> {
 
     // Show the configuration screen
     let options = eframe::NativeOptions {
-        initial_window_size: Some(eframe::egui::vec2(460.0, 360.0)),
+        initial_window_size: Some(eframe::egui::vec2(460.0, 400.0)),
         follow_system_theme: false,
         default_theme: eframe::Theme::Dark,
         resizable: false,
@@ -109,7 +109,6 @@ fn run_frontend() -> Result<()> {
         configuration,
         previous: common::ButtonMapping::default(),
         rx: rx,
-        rename: false,
     });
     eframe::run_native(
         "Serf - the console peasants are revolting",

@@ -88,6 +88,8 @@ impl Configuration {
                     lthumb: code_for_label("Shift"),
                     rthumb: code_for_label("V"),
                     back: code_for_label("Tab"),
+                    left_autofire: false,
+                    right_autofire: false,
                     movement_multiplier: 2000,
                     sampling_interval: 2000,
                 }

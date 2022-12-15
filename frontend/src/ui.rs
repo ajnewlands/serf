@@ -17,7 +17,6 @@ pub struct SerfApp {
     pub configuration: common::Configuration,
     pub previous: common::ButtonMapping,
     pub rx: crossbeam::channel::Receiver<common::ButtonMapping>,
-    pub rename: bool,
 }
 
 fn selection_dropdown(label: &str, variable: &mut i32, ui: &mut egui::Ui) {
@@ -135,23 +134,8 @@ impl eframe::App for SerfApp {
                     egui::TextEdit::singleline(
                         &mut self.configuration.games[self.active_game_index].name,
                     )
-                    .interactive(self.rename)
-                    .desired_width(250.),
+                    .desired_width(340.),
                 );
-                if ui
-                    .add_sized(
-                        [30., 18.],
-                        egui::Button::new(if self.rename {
-                            "\u{1f513}"
-                        } else {
-                            "\u{1f512}"
-                        }),
-                    )
-                    .on_hover_text("Unlock name")
-                    .clicked()
-                {
-                    self.rename = !self.rename;
-                }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
                         .add_sized([40., 18.], egui::Button::new("\u{1f4be}"))
@@ -443,6 +427,31 @@ impl eframe::App for SerfApp {
                     });
             });
             ui.separator();
+            ui.push_id("Triggers", |ui| {
+                TableBuilder::new(ui)
+                    .column(Size::exact(220.))
+                    .column(Size::exact(220.))
+                    .body(|mut body| {
+                        body.row(20.0, |mut row| {
+                            row.col(|ui| {
+                                ui.checkbox(
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .left_autofire,
+                                    "Left auto fire (F5 toggles)",
+                                );
+                            });
+                            row.col(|ui| {
+                                ui.checkbox(
+                                    &mut self.configuration.games[self.active_game_index]
+                                        .controls
+                                        .right_autofire,
+                                    "Right auto fire (F6 toggles)",
+                                );
+                            });
+                        });
+                    });
+            });
         });
     }
 }
