@@ -50,7 +50,6 @@ pub fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
                     gamepad.right_trigger = 0;
                 }
             } else {
-                info!("No autofire");
                 gamepad.right_trigger = 255;
             }
         } else {
