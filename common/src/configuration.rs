@@ -92,6 +92,9 @@ impl Configuration {
                     right_autofire: false,
                     movement_multiplier: 2000,
                     sampling_interval: 2000,
+                    recoil_compensation_active: false,
+                    recoil_sideways_compensation: 0,
+                    recoil_vertical_compensation: 0,
                 }
             },
         }];

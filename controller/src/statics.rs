@@ -53,6 +53,11 @@ pub static CODE_BACK: AtomicI32 = AtomicI32::new(0);
 pub static LEFT_AUTOFIRE: AtomicBool = AtomicBool::new(false);
 pub static RIGHT_AUTOFIRE: AtomicBool = AtomicBool::new(false);
 
+// Recoil compensation functionality
+pub static RECOIL_COMPENSATION_ACTIVE: AtomicBool = AtomicBool::new(false);
+pub static RECOIL_COMPENSATION_VERTICAL: AtomicI32 = AtomicI32::new(0);
+pub static RECOIL_COMPENSATION_SIDEWAYS: AtomicI32 = AtomicI32::new(0);
+
 pub fn apply_button_map(map: &common::ButtonMapping) {
     for (control, vcode) in [
         (&CODE_DPAD_L, map.dpadl),
@@ -83,7 +88,11 @@ pub fn apply_button_map(map: &common::ButtonMapping) {
         control.store(vcode, std::sync::atomic::Ordering::Relaxed);
     }
 
-    INTERVAL_MICROS.store(map.sampling_interval, std::sync::atomic::Ordering::Relaxed);
+    RECOIL_COMPENSATION_ACTIVE.store(map.recoil_compensation_active, Ordering::Relaxed);
+    RECOIL_COMPENSATION_SIDEWAYS.store(map.recoil_sideways_compensation, Ordering::Relaxed);
+    RECOIL_COMPENSATION_VERTICAL.store(map.recoil_vertical_compensation, Ordering::Relaxed);
+
+    INTERVAL_MICROS.store(map.sampling_interval, Ordering::Relaxed);
     MOVEMENT_MULTIPLIER.store(
         map.movement_multiplier,
         std::sync::atomic::Ordering::Relaxed,
@@ -114,5 +123,8 @@ pub fn create_button_map() -> common::ButtonMapping {
         right_autofire: RIGHT_AUTOFIRE.load(Ordering::Relaxed),
         movement_multiplier: MOVEMENT_MULTIPLIER.load(Ordering::Relaxed),
         sampling_interval: INTERVAL_MICROS.load(Ordering::Relaxed),
+        recoil_compensation_active: RECOIL_COMPENSATION_ACTIVE.load(Ordering::Relaxed),
+        recoil_vertical_compensation: RECOIL_COMPENSATION_VERTICAL.load(Ordering::Relaxed),
+        recoil_sideways_compensation: RECOIL_COMPENSATION_SIDEWAYS.load(Ordering::Relaxed),
     }
 }

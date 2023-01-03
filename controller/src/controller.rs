@@ -37,6 +37,17 @@ pub fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
             gamepad.left_trigger = 0;
         }
         if LBUTTONDOWN.load(Ordering::Relaxed) {
+            // Recoil compensation adjusts the gamepad stick position by a given percentage
+            if RECOIL_COMPENSATION_ACTIVE.load(Ordering::Relaxed) {
+                gamepad.thumb_rx = gamepad.thumb_rx.saturating_add(
+                    i16::MAX / 100 * RECOIL_COMPENSATION_SIDEWAYS.load(Ordering::Relaxed) as i16,
+                );
+                gamepad.thumb_ry = gamepad.thumb_ry.saturating_sub(
+                    i16::MAX / 100 * RECOIL_COMPENSATION_VERTICAL.load(Ordering::Relaxed) as i16,
+                );
+            }
+
+            // Autofire
             if LEFT_AUTOFIRE.load(Ordering::Relaxed) {
                 let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)

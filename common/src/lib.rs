@@ -39,4 +39,10 @@ pub struct ButtonMapping {
     pub right_autofire: bool,
     pub movement_multiplier: i16,
     pub sampling_interval: u64,
+    #[serde(default)]
+    pub recoil_compensation_active: bool,
+    #[serde(default)]
+    pub recoil_vertical_compensation: i32,
+    #[serde(default)]
+    pub recoil_sideways_compensation: i32,
 }

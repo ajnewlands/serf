@@ -112,6 +112,10 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
         info!("Toggle right auto fire");
         RIGHT_AUTOFIRE.fetch_xor(true, Ordering::Relaxed);
         send_updated_buttonmap();
+    } else if *pcode == 0x77 && down {
+        info!("Toggle recoil compensation");
+        RECOIL_COMPENSATION_ACTIVE.fetch_xor(true, Ordering::Relaxed);
+        send_updated_buttonmap();
     }
     return CallNextHookEx(None, code, wparam, lparam);
 }
