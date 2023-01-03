@@ -1,5 +1,6 @@
 #![windows_subsystem = "windows"]
 use anyhow::Result;
+use image::GenericImageView;
 use log::error;
 
 mod ui;
@@ -57,6 +58,19 @@ extern "system" fn wndproc(window: HWND, message: u32, wparam: WPARAM, lparam: L
     }
 }
 
+fn get_icon_data() -> Option<eframe::IconData> {
+    let bytes = include_bytes!("../../icons/serf.png");
+
+    let image = image::load_from_memory_with_format(bytes, image::ImageFormat::Png)
+        .expect("Embedded icon must be a valid PNG");
+
+    Some(eframe::IconData {
+        width: image.dimensions().0,
+        height: image.dimensions().1,
+        rgba: image.into_bytes(),
+    })
+}
+
 fn run_frontend() -> Result<()> {
     let configuration = common::Configuration::load()?;
     unsafe {
@@ -92,11 +106,14 @@ fn run_frontend() -> Result<()> {
         );
     }
 
+    let icon_data = get_icon_data();
+
     // Show the configuration screen
     let options = eframe::NativeOptions {
         initial_window_size: Some(eframe::egui::vec2(460.0, 400.0)),
         follow_system_theme: false,
         default_theme: eframe::Theme::Dark,
+        icon_data,
         resizable: false,
         ..Default::default()
     };
