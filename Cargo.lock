@@ -1676,6 +1676,7 @@ dependencies = [
  "log",
  "vigem-client",
  "windows",
+ "winres",
 ]
 
 [[package]]
@@ -1692,7 +1693,6 @@ dependencies = [
  "log",
  "once_cell",
  "windows",
- "winres",
 ]
 
 [[package]]
