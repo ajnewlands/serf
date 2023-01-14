@@ -45,4 +45,8 @@ pub struct ButtonMapping {
     pub recoil_vertical_compensation: i32,
     #[serde(default)]
     pub recoil_sideways_compensation: i32,
+    #[serde(default)]
+    pub recoil_impulse_vertical: i32,
+    #[serde(default)]
+    pub recoil_impulse_duration: i32,
 }

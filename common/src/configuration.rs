@@ -95,6 +95,8 @@ impl Configuration {
                     recoil_compensation_active: false,
                     recoil_sideways_compensation: 0,
                     recoil_vertical_compensation: 0,
+                    recoil_impulse_vertical: 0,
+                    recoil_impulse_duration: 0,
                 }
             },
         }];

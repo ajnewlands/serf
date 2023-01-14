@@ -110,7 +110,7 @@ fn run_frontend() -> Result<()> {
 
     // Show the configuration screen
     let options = eframe::NativeOptions {
-        initial_window_size: Some(eframe::egui::vec2(460.0, 460.0)),
+        initial_window_size: Some(eframe::egui::vec2(460.0, 510.0)),
         follow_system_theme: false,
         default_theme: eframe::Theme::Dark,
         icon_data,

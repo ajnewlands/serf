@@ -57,6 +57,8 @@ pub static RIGHT_AUTOFIRE: AtomicBool = AtomicBool::new(false);
 pub static RECOIL_COMPENSATION_ACTIVE: AtomicBool = AtomicBool::new(false);
 pub static RECOIL_COMPENSATION_VERTICAL: AtomicI32 = AtomicI32::new(0);
 pub static RECOIL_COMPENSATION_SIDEWAYS: AtomicI32 = AtomicI32::new(0);
+pub static RECOIL_IMPULSE_VERTICAL: AtomicI32 = AtomicI32::new(0);
+pub static RECOIL_IMPULSE_DURATION: AtomicI32 = AtomicI32::new(0);
 
 pub fn apply_button_map(map: &common::ButtonMapping) {
     for (control, vcode) in [
@@ -91,6 +93,8 @@ pub fn apply_button_map(map: &common::ButtonMapping) {
     RECOIL_COMPENSATION_ACTIVE.store(map.recoil_compensation_active, Ordering::Relaxed);
     RECOIL_COMPENSATION_SIDEWAYS.store(map.recoil_sideways_compensation, Ordering::Relaxed);
     RECOIL_COMPENSATION_VERTICAL.store(map.recoil_vertical_compensation, Ordering::Relaxed);
+    RECOIL_IMPULSE_DURATION.store(map.recoil_impulse_duration, Ordering::Relaxed);
+    RECOIL_IMPULSE_VERTICAL.store(map.recoil_impulse_vertical, Ordering::Relaxed);
 
     INTERVAL_MICROS.store(map.sampling_interval, Ordering::Relaxed);
     MOVEMENT_MULTIPLIER.store(
@@ -126,5 +130,7 @@ pub fn create_button_map() -> common::ButtonMapping {
         recoil_compensation_active: RECOIL_COMPENSATION_ACTIVE.load(Ordering::Relaxed),
         recoil_vertical_compensation: RECOIL_COMPENSATION_VERTICAL.load(Ordering::Relaxed),
         recoil_sideways_compensation: RECOIL_COMPENSATION_SIDEWAYS.load(Ordering::Relaxed),
+        recoil_impulse_vertical: RECOIL_IMPULSE_VERTICAL.load(Ordering::Relaxed),
+        recoil_impulse_duration: RECOIL_IMPULSE_DURATION.load(Ordering::Relaxed),
     }
 }

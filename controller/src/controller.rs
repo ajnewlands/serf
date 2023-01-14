@@ -17,13 +17,16 @@ pub fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
 
         gamepad.thumb_rx = thumb_rx;
         gamepad.thumb_ry = thumb_ry;
+
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Cant get systemtime")
+            .as_millis() as u64;
+
         if RBUTTONDOWN.load(Ordering::Relaxed) {
+            let delta = now - RIGHT_DOWN_INSTANT.load(Ordering::Relaxed);
+
             if RIGHT_AUTOFIRE.load(Ordering::Relaxed) {
-                let now = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .expect("Cant get systemtime")
-                    .as_millis() as u64;
-                let delta = now - RIGHT_DOWN_INSTANT.load(Ordering::Relaxed);
                 // 37 ms on, 37 off gives circa 800 RPM.
                 if delta % 74 < 37 {
                     gamepad.left_trigger = 255;
@@ -37,23 +40,25 @@ pub fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
             gamepad.left_trigger = 0;
         }
         if LBUTTONDOWN.load(Ordering::Relaxed) {
+            let delta = now - LEFT_DOWN_INSTANT.load(Ordering::Relaxed);
             // Recoil compensation adjusts the gamepad stick position by a given percentage
             if RECOIL_COMPENSATION_ACTIVE.load(Ordering::Relaxed) {
                 gamepad.thumb_rx = gamepad.thumb_rx.saturating_add(
                     i16::MAX / 100 * RECOIL_COMPENSATION_SIDEWAYS.load(Ordering::Relaxed) as i16,
                 );
+
                 gamepad.thumb_ry = gamepad.thumb_ry.saturating_sub(
                     i16::MAX / 100 * RECOIL_COMPENSATION_VERTICAL.load(Ordering::Relaxed) as i16,
                 );
+                if delta < RECOIL_IMPULSE_DURATION.load(Ordering::Relaxed) as u64 {
+                    gamepad.thumb_ry = gamepad.thumb_ry.saturating_sub(
+                        i16::MAX / 100 * RECOIL_IMPULSE_VERTICAL.load(Ordering::Relaxed) as i16,
+                    );
+                }
             }
 
             // Autofire
             if LEFT_AUTOFIRE.load(Ordering::Relaxed) {
-                let now = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .expect("Cant get systemtime")
-                    .as_millis() as u64;
-                let delta = now - LEFT_DOWN_INSTANT.load(Ordering::Relaxed);
                 // 37 ms on, 37 off gives circa 800 RPM.
                 if delta % 74 < 37 {
                     gamepad.right_trigger = 255;

@@ -443,7 +443,53 @@ impl eframe::App for SerfApp {
                                 ui.with_layout(
                                     egui::Layout::right_to_left(egui::Align::TOP),
                                     |ui| {
-                                        ui.label("Vertical \u{2b07}");
+                                        ui.label("Impulse \u{2b07}");
+                                    },
+                                );
+                            });
+                            row.col(|ui| {
+                                ui.style_mut().spacing.slider_width = 288.;
+                                ui.add(
+                                    egui::Slider::new(
+                                        &mut self.configuration.games[self.active_game_index]
+                                            .controls
+                                            .recoil_impulse_vertical,
+                                        -50..=50,
+                                    )
+                                    .step_by(1.)
+                                    .integer(),
+                                );
+                            });
+                        });
+                        body.row(20.0, |mut row| {
+                            row.col(|ui| {
+                                ui.with_layout(
+                                    egui::Layout::right_to_left(egui::Align::TOP),
+                                    |ui| {
+                                        ui.label("Impulse (ms)");
+                                    },
+                                );
+                            });
+                            row.col(|ui| {
+                                ui.style_mut().spacing.slider_width = 288.;
+                                ui.add(
+                                    egui::Slider::new(
+                                        &mut self.configuration.games[self.active_game_index]
+                                            .controls
+                                            .recoil_impulse_duration,
+                                        0..=200,
+                                    )
+                                    .step_by(1.)
+                                    .integer(),
+                                );
+                            });
+                        });
+                        body.row(20.0, |mut row| {
+                            row.col(|ui| {
+                                ui.with_layout(
+                                    egui::Layout::right_to_left(egui::Align::TOP),
+                                    |ui| {
+                                        ui.label("Sustained \u{2b07}");
                                     },
                                 );
                             });
@@ -454,7 +500,7 @@ impl eframe::App for SerfApp {
                                         &mut self.configuration.games[self.active_game_index]
                                             .controls
                                             .recoil_vertical_compensation,
-                                        -25..=25,
+                                        -50..=50,
                                     )
                                     .step_by(1.)
                                     .integer(),

@@ -25,13 +25,12 @@ unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) 
     } else if !mouse_enabled && wparam.0 == WM_LBUTTONDOWN as usize {
         LBUTTONDOWN.store(true, Ordering::Relaxed);
 
-        if LEFT_AUTOFIRE.load(Ordering::Relaxed) {
-            let now = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .expect("Cant get systemtime")
-                .as_millis() as u64;
-            LEFT_DOWN_INSTANT.store(now, Ordering::Relaxed);
-        }
+        // Always needed for left trigger, to compute initial recoil instant
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Cant get systemtime")
+            .as_millis() as u64;
+        LEFT_DOWN_INSTANT.store(now, Ordering::Relaxed);
 
         return LRESULT { 0: 1 };
     } else if !mouse_enabled && wparam.0 == WM_LBUTTONUP as usize {
