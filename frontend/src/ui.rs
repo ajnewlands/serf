@@ -454,7 +454,7 @@ impl eframe::App for SerfApp {
                                         &mut self.configuration.games[self.active_game_index]
                                             .controls
                                             .recoil_impulse_vertical,
-                                        -50..=50,
+                                        0..=50,
                                     )
                                     .step_by(1.)
                                     .integer(),
@@ -500,7 +500,7 @@ impl eframe::App for SerfApp {
                                         &mut self.configuration.games[self.active_game_index]
                                             .controls
                                             .recoil_vertical_compensation,
-                                        -50..=50,
+                                        0..=50,
                                     )
                                     .step_by(1.)
                                     .integer(),

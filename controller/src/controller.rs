@@ -13,7 +13,7 @@ pub fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
         ));
         let multiplier = MOVEMENT_MULTIPLIER.load(Ordering::Relaxed);
         let thumb_rx = i16::saturating_mul(X.swap(0, Ordering::Relaxed) as i16, multiplier);
-        let thumb_ry = i16::saturating_mul(Y.swap(0, Ordering::Relaxed) as i16, multiplier);
+        let thumb_ry = i16::saturating_mul(-1 * Y.swap(0, Ordering::Relaxed) as i16, multiplier);
 
         gamepad.thumb_rx = thumb_rx;
         gamepad.thumb_ry = thumb_ry;
@@ -42,16 +42,18 @@ pub fn run_controller(mut gamepad: XGamepad, mut target: Xbox360Wired<Client>) {
         if LBUTTONDOWN.load(Ordering::Relaxed) {
             let delta = now - LEFT_DOWN_INSTANT.load(Ordering::Relaxed);
             // Recoil compensation adjusts the gamepad stick position by a given percentage
-            if RECOIL_COMPENSATION_ACTIVE.load(Ordering::Relaxed) {
+            if RECOIL_COMPENSATION_ACTIVE.load(Ordering::Relaxed)
+                && RBUTTONDOWN.load(Ordering::Relaxed)
+            {
                 gamepad.thumb_rx = gamepad.thumb_rx.saturating_add(
                     i16::MAX / 100 * RECOIL_COMPENSATION_SIDEWAYS.load(Ordering::Relaxed) as i16,
                 );
 
-                gamepad.thumb_ry = gamepad.thumb_ry.saturating_sub(
+                gamepad.thumb_ry = gamepad.thumb_ry.saturating_add(
                     i16::MAX / 100 * RECOIL_COMPENSATION_VERTICAL.load(Ordering::Relaxed) as i16,
                 );
                 if delta < RECOIL_IMPULSE_DURATION.load(Ordering::Relaxed) as u64 {
-                    gamepad.thumb_ry = gamepad.thumb_ry.saturating_sub(
+                    gamepad.thumb_ry = gamepad.thumb_ry.saturating_add(
                         i16::MAX / 100 * RECOIL_IMPULSE_VERTICAL.load(Ordering::Relaxed) as i16,
                     );
                 }
